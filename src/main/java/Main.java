@@ -1,8 +1,31 @@
-import java.util.Scanner;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class Main {
+    // Maps from the command name to the action to perform with the arguments
+    private static final Map<String, Consumer<List<String>>> builtins = Map.of(
+            "echo", arguments -> {
+                String result = String.join(" ", arguments);
+                System.out.println(result);
+            },
+            "exit", arguments -> {
+                if (arguments.size() == 1 && arguments.getFirst().equals("0")) {
+                    System.exit(0);
+                }
+                else {
+                    commandNotFound("exit", arguments);
+                }
+            }
+    );
+
+    private static void commandNotFound(String command, List<String> args) {
+        if (args.isEmpty()) {
+            System.out.println(command + ": command not found");
+        } else {
+          System.out.println(command + " " + String.join(" ", args) + ": command not found");
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         while (true) {
             System.out.print("$ ");
@@ -10,22 +33,22 @@ public class Main {
             Scanner scanner = new Scanner(System.in);
             String input = scanner.nextLine();
 
-            String[] parts = input.split(" ");
+            List<String> parts = Arrays.asList(input.split(" "));
+            String command = parts.getFirst();
+            List<String> arguments = parts.subList(1, parts.size());
 
-            switch (parts[0]) {
-                case "echo":
-                    String result = Stream.of(parts)
-                        .skip(1) // do not repeat "echo"
-                        .collect(Collectors.joining(" "));
-                    System.out.println(result);
-                    break;
-                case "exit":
-                    if (parts.length == 2 && parts[1].equals("0")) {
-                        System.exit(0);
-                    }
-                    // Fall-through in case the command is different from "exit 0"
-                default:
-                    System.out.println(input + ": command not found");
+            if (builtins.containsKey(command)) {
+                builtins.get(command).accept(arguments);
+            } else if (command.equals("type")) {
+                String candidate = arguments.getFirst();
+                if (builtins.containsKey(candidate) || candidate.equals("type")) {
+                    System.out.println(candidate + " is a shell builtin");
+                }
+                else {
+                    System.out.println(candidate + ": not found");
+                }
+            } else {
+                commandNotFound(command, arguments);
             }
         }
     }
