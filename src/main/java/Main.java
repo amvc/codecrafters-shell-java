@@ -46,6 +46,12 @@ public class Main {
         }
     }
 
+    private static Optional<String> findExecutable(String command) {
+        return executables.stream()
+                .filter(e -> e.endsWith("/" + command))
+                .findFirst();
+    }
+
     public static void main(String[] args) throws Exception {
         while (true) {
             System.out.print("$ ");
@@ -57,20 +63,27 @@ public class Main {
             String command = parts.getFirst();
             List<String> arguments = parts.subList(1, parts.size());
 
+            Optional<String> executable = findExecutable(command);
+
             if (builtins.containsKey(command)) {
                 builtins.get(command).accept(arguments);
             } else if (command.equals("type")) {
                 String candidate = arguments.getFirst();
-                Optional<String> executable = executables.stream()
-                        .filter(e -> e.endsWith("/" + candidate))
-                        .findFirst();
                 if (builtins.containsKey(candidate) || candidate.equals("type")) {
                     System.out.println(candidate + " is a shell builtin");
-                } else if (executable.isPresent()) {
-                    System.out.println(candidate + " is " + executable.get());
-                }
-                else {
+                } else if (findExecutable(candidate).isPresent()) {
+                    System.out.println(candidate + " is " + findExecutable(candidate).get());
+                } else {
                     System.out.println(candidate + ": not found");
+                }
+            } else if (executable.isPresent()) {
+                String normalized = Stream.of(executable.get().split("/")).toList().getLast();
+                try {
+                    Process process = Runtime.getRuntime().exec(normalized + " " + String.join(" ", arguments));
+                    String output = new String(process.getInputStream().readAllBytes());
+                    System.out.println(output.trim());
+                } catch (IOException e) {
+                    // Bad luck
                 }
             } else {
                 commandNotFound(command, arguments);
