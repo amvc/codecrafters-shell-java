@@ -1,5 +1,10 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class Main {
     // Maps from the command name to the action to perform with the arguments
@@ -17,6 +22,21 @@ public class Main {
                 }
             }
     );
+
+    // List of executables found in $PATH
+    private static final List<String> executables = new ArrayList<>();
+
+    static {
+        // Read each dir in PATH...
+        Stream.of(System.getenv("PATH").split(":")).forEach(dir -> {
+            try (Stream<Path> files = Files.list(Paths.get(dir))) {
+                // ...and add each file to 'executables'
+                files.forEach(file -> executables.add(file.toString()));
+            } catch (IOException e) {
+                // Skip this directory
+            }
+        });
+    }
 
     private static void commandNotFound(String command, List<String> args) {
         if (args.isEmpty()) {
@@ -41,8 +61,13 @@ public class Main {
                 builtins.get(command).accept(arguments);
             } else if (command.equals("type")) {
                 String candidate = arguments.getFirst();
+                Optional<String> executable = executables.stream()
+                        .filter(e -> e.endsWith("/" + candidate))
+                        .findFirst();
                 if (builtins.containsKey(candidate) || candidate.equals("type")) {
                     System.out.println(candidate + " is a shell builtin");
+                } else if (executable.isPresent()) {
+                    System.out.println(candidate + " is " + executable.get());
                 }
                 else {
                     System.out.println(candidate + ": not found");
