@@ -7,6 +7,9 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class Main {
+    // This process builder is used to hold the shell's environment
+    private static final ProcessBuilder processBuilder = new ProcessBuilder();
+
     // Maps from the command name to the action to perform with the arguments
     private static final Map<String, Consumer<List<String>>> builtins = Map.of(
             "echo", arguments -> {
@@ -27,9 +30,22 @@ public class Main {
                     commandNotFound("pwd", arguments);
                 }
                 // Let's implement this by reading $PWD
-                String pwd = System.getenv("PWD");
+                String pwd = processBuilder.environment().get("PWD");
                 if (pwd != null) {
                     System.out.println(pwd);
+                }
+            },
+            "cd", arguments -> {
+                if (arguments.size() == 1) {
+                    String path = arguments.getFirst();
+                    if (Paths.get(path).toFile().isDirectory()) {
+                        // Let's implement this by setting $PWD
+                        processBuilder.environment().put("PWD", path);
+                    } else {
+                        System.out.println("cd: " + path + ": No such file or directory");
+                    }
+                } else {
+                    commandNotFound("cd", arguments);
                 }
             }
     );
