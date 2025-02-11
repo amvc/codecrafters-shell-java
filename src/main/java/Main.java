@@ -20,6 +20,17 @@ public class Main {
                 else {
                     commandNotFound("exit", arguments);
                 }
+            },
+            "pwd", arguments -> {
+                // Prevent the command from being run with arguments
+                if (!arguments.isEmpty()) {
+                    commandNotFound("pwd", arguments);
+                }
+                // Let's implement this by reading $PWD
+                String pwd = System.getenv("PWD");
+                if (pwd != null) {
+                    System.out.println(pwd);
+                }
             }
     );
 
