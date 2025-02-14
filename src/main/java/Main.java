@@ -38,6 +38,9 @@ public class Main {
             "cd", arguments -> {
                 if (arguments.size() == 1) {
                     String path = arguments.getFirst();
+                    if (path.equals("~")) {
+                        path = processBuilder.environment().get("HOME");
+                    }
                     Path currentPath = Paths.get(processBuilder.environment().get("PWD"));
                     Path resolved = currentPath.resolve(Paths.get(path));
                     if (resolved.toFile().isDirectory()) {
