@@ -38,9 +38,12 @@ public class Main {
             "cd", arguments -> {
                 if (arguments.size() == 1) {
                     String path = arguments.getFirst();
-                    if (Paths.get(path).toFile().isDirectory()) {
+                    Path currentPath = Paths.get(processBuilder.environment().get("PWD"));
+                    Path resolved = currentPath.resolve(Paths.get(path));
+                    if (resolved.toFile().isDirectory()) {
+                        Path absolutePath = resolved.toAbsolutePath().normalize();
                         // Let's implement this by setting $PWD
-                        processBuilder.environment().put("PWD", path);
+                        processBuilder.environment().put("PWD", absolutePath.toString());
                     } else {
                         System.out.println("cd: " + path + ": No such file or directory");
                     }
